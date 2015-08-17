@@ -1,0 +1,11 @@
+*~
+*.a
+*.d
+*.dll
+*.exe
+*.la
+*.lo
+*.o
+*.obj
+Makefile
+zconf.h

@@ -161,9 +161,14 @@ minigzip64.o: test/minigzip.c zlib.h zconf.h
 
 placebo $(SHAREDLIBV): $(PIC_OBJS) libz.a
 	$(LDSHARED) $(SFLAGS) -o $@ $(PIC_OBJS) $(LDSHAREDLIBC) $(LDFLAGS)
-	rm -f $(SHAREDLIB) $(SHAREDLIBM)
-	ln -s $@ $(SHAREDLIB)
-	ln -s $@ $(SHAREDLIBM)
+	if test "$(SHAREDLIBV)" != "$(SHAREDLIB)"; then \
+	  rm -f $(SHAREDLIB); \
+	  ln -s $@ $(SHAREDLIB); \
+	fi
+	if test "$(SHAREDLIBV)" != "$(SHAREDLIBM)"; then \
+	  rm -f $(SHAREDLIBM); \
+	  ln -s $@ $(SHAREDLIBM); \
+	fi
 	-@rmdir objs
 
 example$(EXE): example.o $(STATICLIB)
@@ -198,9 +203,18 @@ install-libs: $(LIBS)
 	  echo "cp $(SHAREDLIBV) $(DESTDIR)$(sharedlibdir)"; \
 	  chmod 755 $(DESTDIR)$(sharedlibdir)/$(SHAREDLIBV); \
 	  echo "chmod 755 $(DESTDIR)$(sharedlibdir)/$(SHAREDLIBV)"; \
-	  rm -f $(DESTDIR)$(sharedlibdir)/$(SHAREDLIB) $(DESTDIR)$(sharedlibdir)/$(SHAREDLIBM); \
-	  ln -s $(SHAREDLIBV) $(DESTDIR)$(sharedlibdir)/$(SHAREDLIB); \
-	  ln -s $(SHAREDLIBV) $(DESTDIR)$(sharedlibdir)/$(SHAREDLIBM); \
+	  if test -f $(STATICLIB:.a=_dll.a); then \
+	    cp $(STATICLIB:.a=_dll.a) $(DESTDIR)$(sharedlibdir); \
+	    chmod 644 $(DESTDIR)$(sharedlibdir)/$(STATICLIB:.a=_dll.a); \
+	  fi; \
+	  if test "$(SHAREDLIBV)" != "$(SHAREDLIB)"; then \
+	    rm -f $(DESTDIR)$(sharedlibdir)/$(SHAREDLIB); \
+	    ln -s $(SHAREDLIBV) $(DESTDIR)$(sharedlibdir)/$(SHAREDLIB); \
+	  fi; \
+	  if test "$(SHAREDLIBV)" != "$(SHAREDLIBM)"; then \
+	    rm -f $(DESTDIR)$(sharedlibdir)/$(SHAREDLIBM); \
+	    ln -s $(SHAREDLIBV) $(DESTDIR)$(sharedlibdir)/$(SHAREDLIBM); \
+	  fi; \
 	  ($(LDCONFIG) || true)  >/dev/null 2>&1; \
 	fi
 	cp zlib.3 $(DESTDIR)$(man3dir)
@@ -218,8 +232,9 @@ install: install-libs
 uninstall:
 	cd $(DESTDIR)$(includedir) && rm -f zlib.h zconf.h
 	cd $(DESTDIR)$(libdir) && rm -f libz.a; \
-	if test -n "$(SHAREDLIBV)" -a -f $(SHAREDLIBV); then \
+	if test -n "$(SHAREDLIBV)"; then \
 	  rm -f $(SHAREDLIBV) $(SHAREDLIB) $(SHAREDLIBM); \
+	  rm -f $(STATICLIB:.a=_dll.a); \
 	fi
 	cd $(DESTDIR)$(man3dir) && rm -f zlib.3
 	cd $(DESTDIR)$(pkgconfigdir) && rm -f zlib.pc
@@ -245,7 +260,7 @@ clean:
 	   example$(EXE) minigzip$(EXE) examplesh$(EXE) minigzipsh$(EXE) \
 	   example64$(EXE) minigzip64$(EXE) \
 	   infcover \
-	   libz.* foo.gz so_locations \
+	   libz.* $(SHAREDLIBV) libz_dll.a foo.gz so_locations \
 	   _match.s maketree contrib/infback9/*.o
 	rm -rf objs
 	rm -f *.gcda *.gcno *.gcov

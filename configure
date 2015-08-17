@@ -188,7 +188,16 @@ if test "$gcc" -eq 1 && ($cc -c $test.c) >> configure.log 2>&1; then
   *BSD | *bsd* | DragonFly)
         LDSHARED=${LDSHARED-"$cc -shared -Wl,-soname,libz.so.1,--version-script,zlib.map"}
         LDCONFIG="ldconfig -m" ;;
-  CYGWIN* | Cygwin* | cygwin* | OS/2*)
+  CYGWIN* | Cygwin* | cygwin*)
+        EXE='.exe' ;;
+  OS/2*)
+        # remove -fPIC which is not necessary on OS/2
+        SFLAGS=`echo $SFLAGS | sed -e "s/-fPIC//g"`
+        LDSHARED=${LDSHARED-"kdllar -cc $cc -implib libz_dll.a -nokeepdef -objext .lo"}
+        shared_ext='.dll'
+        SHAREDLIB=z$VER1$shared_ext
+        SHAREDLIBV=z$VER1$shared_ext
+        SHAREDLIBM=z$VER1$shared_ext
         EXE='.exe' ;;
   MINGW* | mingw*)
 # temporary bypass
